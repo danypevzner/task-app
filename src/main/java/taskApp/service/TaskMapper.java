@@ -1,7 +1,6 @@
 package taskApp.service;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 import taskApp.model.Task;
 import taskApp.model.TaskRequest;
@@ -11,10 +10,10 @@ import java.util.List;
 
 @Mapper
 public interface TaskMapper {
-    public TaskMapper INSTANCE = Mappers.getMapper(TaskMapper.class);
+    TaskMapper INSTANCE = Mappers.getMapper(TaskMapper.class);
 
-    public TaskResponse toResponse(Task task);
-    public Task toTask(TaskRequest request);
-    public List<TaskResponse> toResponseList(List<Task> tasks);
+    TaskResponse toResponse(Task task);
+    Task toTask(TaskRequest request);
+    List<TaskResponse> toResponseList(List<Task> tasks);
 
 }

@@ -11,14 +11,12 @@ import taskApp.model.TaskRequest;
 import taskApp.model.TaskResponse;
 import taskApp.model.TaskStatus;
 import taskApp.repository.TaskRepository;
-
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
 public class TaskServiceImpl implements TaskService {
-    private TaskRepository repository;
+    private final TaskRepository repository;
     private static final TaskMapper taskMapper = Mappers.getMapper(TaskMapper.class);
 
     private final Logger logger = LoggerFactory.getLogger(TaskServiceImpl.class);
@@ -33,8 +31,8 @@ public class TaskServiceImpl implements TaskService {
         task.setModified(LocalDateTime.now());
         if(task.getStatus()==null){
             task.setStatus(TaskStatus.NEW);
-        };
-        logger.info("Task created");
+        }
+        logger.info("Creating task");
         return taskMapper.toResponse(repository.save(task));
     }
 
@@ -48,7 +46,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public TaskResponse read(Long id) {
         logger.info("Reading task with id = {}", id);
-        return taskMapper.toResponse(repository.findById(Long.valueOf(id)).orElseThrow(() -> new NoSuchElementException("Task not found by id = " + id)));
+        return taskMapper.toResponse(repository.findById(id).orElseThrow(() -> new NoSuchElementException("Task not found by id = " + id)));
     }
 
     @Override
@@ -58,9 +56,18 @@ public class TaskServiceImpl implements TaskService {
         existingTask.setDescription(taskRequest.getDescription());
         existingTask.setStatus(taskRequest.getStatus());
         existingTask.setModified(LocalDateTime.now());
-        logger.info("Task with id = "+id+ "updated");
+        logger.info("Updating task with id = {}", id);
         return taskMapper.toResponse(repository.save(existingTask));
 
+    }
+
+    @Override
+    public TaskResponse updateStatus(Long id,TaskStatus status){
+        Task existingTask = repository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Task not found with id: " + id));
+        existingTask.setStatus(status);
+        logger.info("Updating task status with id = {}",id);
+        return taskMapper.toResponse(repository.save(existingTask));
     }
 
     @Override
@@ -68,7 +75,7 @@ public class TaskServiceImpl implements TaskService {
         if (!repository.existsById(id)){
             throw new NoSuchElementException("Task not found with id = "+id);
         }
-        logger.info("Task with id = {} deleted", id);
+        logger.info("Deleting task with id = {}", id);
         repository.deleteById(id);
     }
 }

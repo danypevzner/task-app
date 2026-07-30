@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import taskApp.model.TaskRequest;
 import taskApp.model.TaskResponse;
+import taskApp.model.TaskStatus;
 import taskApp.service.TaskService;
 
 @RestController
@@ -56,5 +57,12 @@ public class TaskController {
         logger.info("got delete request for task {}",id);
         taskService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping(value = "/{id}/status")
+    public ResponseEntity<TaskResponse> updateStatus(@PathVariable Long id,
+                                                     @RequestBody String statusString){
+        TaskStatus status =TaskStatus.valueOf(statusString);
+        return ResponseEntity.ok(taskService.updateStatus(id,status));
     }
 }

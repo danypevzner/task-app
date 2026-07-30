@@ -2,11 +2,9 @@ package taskApp.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import taskApp.model.Task;
 import taskApp.model.TaskRequest;
 import taskApp.model.TaskResponse;
-
-import java.util.List;
+import taskApp.model.TaskStatus;
 
 public interface TaskService {
     TaskResponse create(TaskRequest taskRequest);
@@ -14,4 +12,5 @@ public interface TaskService {
     TaskResponse read(Long id);
     TaskResponse update(TaskRequest taskRequest, Long id);
     void delete(Long id);
+    TaskResponse updateStatus(Long id,TaskStatus taskStatus);
 }

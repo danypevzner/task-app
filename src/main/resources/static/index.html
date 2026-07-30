@@ -114,30 +114,28 @@
         }
     }
 
-    // 5. Обновить задачу (в этом примере просто меняем статус)
-    async function toggleStatus(id, currentStatus) {
-        // Простая логика переключения статусов для демо
-        let nextStatus = 'NEW';
-        if (currentStatus === 'NEW') nextStatus = 'IN_PROGRESS';
-        if (currentStatus === 'IN_PROGRESS') nextStatus = 'DONE';
-        if (currentStatus === 'DONE') nextStatus = 'NEW';
+  async function toggleStatus(id, currentStatus) {
+    let nextStatus = 'NEW';
+    if (currentStatus === 'NEW') nextStatus = 'IN_PROGRESS';
+    if (currentStatus === 'IN_PROGRESS') nextStatus = 'DONE';
+    if (currentStatus === 'DONE') nextStatus = 'NEW';
 
-        const body = {
-            description: "Статус изменен через UI", // Описание тоже надо передать, так как твой DTO требует его
-            status: nextStatus
-        };
-
-        try {
-            await fetch(`${API_URL}/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-            getTasks();
-        } catch (e) {
-            alert('Ошибка обновления: ' + e.message);
-        }
+    try {
+        await fetch(`${API_URL}/${id}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            // ✅ ПРАВИЛЬНО: JSON.stringify превратит "NEW" в "\"NEW\"", что является валидным JSON-строкой
+            body: nextStatus
+        });
+        getTasks();
+    } catch (e) {
+        console.error(e);
+        alert('Не удалось обновить статус: ' + e.message);
     }
+}
+
 
     // Запуск при загрузке страницы
     getTasks();

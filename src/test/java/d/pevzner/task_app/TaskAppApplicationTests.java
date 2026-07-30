@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import taskApp.TaskApplication;
-import taskApp.service.TaskServiceImpl;
 
 @SpringBootTest(classes = TaskApplication.class)
 class TaskAppApplicationTests {
