@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Task App Frontend</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .task-card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; background: #f9f9f9; }
+        button { cursor: pointer; padding: 5px 10px; margin-right: 5px; }
+        input, textarea { padding: 8px; margin: 5px 0; }
+        .status-new { color: blue; font-weight: bold; }
+        .status-in-progress { color: orange; font-weight: bold; }
+        .status-done { color: green; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h1>Управление задачами (Frontend для Spring Boot)</h1>
+
+<!-- Форма создания -->
+<div style="border: 1px dashed #aaa; padding: 20px; margin-bottom: 30px;">
+    <h3>Создать задачу</h3>
+    <input type="text" id="descInput" placeholder="Описание задачи (минимум 3 символа)">
+    <select id="statusInput">
+        <option value="NEW">NEW</option>
+        <option value="IN_PROGRESS">IN_PROGRESS</option>
+        <option value="DONE">DONE</option>
+    </select>
+    <button onclick="createTask()">Создать</button>
+</div>
+
+<!-- Список задач -->
+<h3>Список задач</h3>
+<div id="tasksList">Загрузка...</div>
+
+<script>
+    const API_URL = '/api/tasks'; // Твой базовый путь (или полный URL, если фронтенд отдельно)
+
+    // 1. Получить все задачи
+    async function getTasks() {
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('Ошибка сети');
+            const tasks = await response.json();
+            renderTasks(tasks);
+        } catch (error) {
+            console.error(error);
+            document.getElementById('tasksList').innerHTML = '<p style="color:red">Ошибка загрузки задач. Проверьте консоль.</p>';
+        }
+    }
+
+    function renderTasks(data) {
+    const container = document.getElementById('tasksList');
+
+    // ⚠️ ВАЖНО: Если бэкенд возвращает Page, задачи лежат в data.content
+    // Если бэкенд вернет просто List, то data и есть список.
+    const tasks = Array.isArray(data) ? data : (data.content || []);
+
+    if (!tasks || tasks.length === 0) {
+        container.innerHTML = '<p>Задач нет.</p>';
+        return;
+    }
+
+    container.innerHTML = tasks.map(task => `
+        <div class="task-card">
+            <strong>ID: ${task.id}</strong> | Статус: <span class="status-${task.status.toLowerCase()}">${task.status}</span><br>
+            Описание: ${task.description}<br>
+            Создано: ${new Date(task.created).toLocaleString()}<br>
+            Изменено: ${task.modified ? new Date(task.modified).toLocaleString() : 'Не менялось'}
+
+            <br><br>
+            <button onclick="toggleStatus(${task.id}, '${task.status}')">Сменить статус</button>
+            <button style="background: #ffcccc;" onclick="deleteTask(${task.id})">Удалить</button>
+        </div>
+    `).join('');
+    }
+
+
+    // 3. Создать задачу
+    async function createTask() {
+        const desc = document.getElementById('descInput').value.trim();
+        const status = document.getElementById('statusInput').value;
+
+        if (desc.length < 3) {
+            alert('Описание должно быть длиннее 3 символов!');
+            return;
+        }
+
+        const body = { description: desc, status: status };
+
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            // После создания обновляем список
+            getTasks();
+            document.getElementById('descInput').value = '';
+        } catch (e) {
+            alert('Ошибка создания: ' + e.message);
+        }
+    }
+
+    // 4. Удалить задачу
+    async function deleteTask(id) {
+        if(!confirm('Удалить задачу #' + id + '?')) return;
+
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            getTasks();
+        } catch (e) {
+            alert('Ошибка удаления: ' + e.message);
+        }
+    }
+
+    // 5. Обновить задачу (в этом примере просто меняем статус)
+    async function toggleStatus(id, currentStatus) {
+        // Простая логика переключения статусов для демо
+        let nextStatus = 'NEW';
+        if (currentStatus === 'NEW') nextStatus = 'IN_PROGRESS';
+        if (currentStatus === 'IN_PROGRESS') nextStatus = 'DONE';
+        if (currentStatus === 'DONE') nextStatus = 'NEW';
+
+        const body = {
+            description: "Статус изменен через UI", // Описание тоже надо передать, так как твой DTO требует его
+            status: nextStatus
+        };
+
+        try {
+            await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            getTasks();
+        } catch (e) {
+            alert('Ошибка обновления: ' + e.message);
+        }
+    }
+
+    // Запуск при загрузке страницы
+    getTasks();
+</script>
+</body>
+</html>
