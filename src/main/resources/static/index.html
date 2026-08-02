@@ -2,143 +2,267 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Task App Frontend</title>
+    <title>Kanban Board</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .task-card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; background: #f9f9f9; }
-        button { cursor: pointer; padding: 5px 10px; margin-right: 5px; }
-        input, textarea { padding: 8px; margin: 5px 0; }
-        .status-new { color: blue; font-weight: bold; }
-        .status-in-progress { color: orange; font-weight: bold; }
-        .status-done { color: green; font-weight: bold; }
+        :root {
+            --bg: #f4f6f9;
+            --card: #ffffff;
+            --text: #1e1e1e;
+            --gray: #8c8c94;
+            --orange: #ff6b35;
+            --dark-orange: #d35400;
+            --border: #e0e0e5;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); padding: 20px; color: var(--text); margin: 0; }
+        h1 { margin: 0 0 20px 0; font-weight: 600; font-size: 24px; }
+
+        /* Панель управления */
+        .controls { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 25px; background: var(--card); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        input[type="text"] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; width: 300px; }
+        label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--gray); font-size: 14px; }
+        button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+        .btn-primary { background: var(--orange); color: white; }
+        .btn-primary:hover { background: var(--dark-orange); transform: translateY(-1px); }
+        .btn-secondary { background: transparent; color: var(--gray); border: 1px solid var(--border); }
+
+        /* Доска */
+        .board { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; }
+        .column { min-width: 320px; max-width: 320px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; }
+        .col-header { text-align: center; padding: 10px; border-radius: 8px; font-weight: 600; color: white; }
+        .NEW .col-header { background: #2c3e50; }
+        .IN_PROGRESS .col-header { background: var(--orange); color: #1e1e1e; }
+        .DONE .col-header { background: #27ae60; }
+
+        /* Карточка */
+        .card { border: 1px solid var(--border); border-radius: 8px; background: var(--card); padding: 16px; margin-bottom: 12px; cursor: grab; position: relative; transition: all 0.2s ease; }
+        .card.active { border-color: var(--orange); background: #fffdf0; transform: scale(1.02); box-shadow: 0 4px 15px rgba(255,107,53,0.15); }
+        .card-top { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .NEW { background: #34495e; color: white; }
+        .IN_PROGRESS { background: var(--orange); color: #1e1e1e; }
+        .DONE { background: #2ecc71; color: white; }
+
+        .delete-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--gray); cursor: pointer; }
+        .delete-btn:hover { color: #c0392b; }
+
+        .deadline { font-size: 13px; color: var(--gray); margin-top: 8px; padding-top: 8px; border-top: 1px solid #f0f0f2; }
+        .overdue { color: #c0392b; font-weight: 700; }
+
+        /* Детали (скрыты по умолчанию) */
+        .details { display: none; margin-top: 15px; padding: 12px; background: rgba(255,255,255,0.8); border: 1px solid rgba(255,107,53,0.3); border-radius: 6px; backdrop-filter: blur(4px); }
+        .card.active .details { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+        .label { color: var(--gray); }
+        .value { color: var(--text); }
+
+        /* Создание */
+        .create-box { background: white; border: 1px dashed var(--border); padding: 15px; border-radius: 12px; display: flex; gap: 15px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        #newTaskDesc { flex: 1; min-width: 250px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
+        #newTaskDeadline { padding: 8px; border: 1px solid var(--border); border-radius: 6px; min-width: 220px; }
+        .btn-create { background: var(--orange); color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; }
+        .btn-create:hover { background: var(--dark-orange); }
     </style>
 </head>
 <body>
 
-<h1>Управление задачами</h1>
+<h1>Kanban Доска</h1>
 
-<!-- Форма создания -->
-<div style="border: 1px dashed #aaa; padding: 20px; margin-bottom: 30px;">
-    <h3>Создать задачу</h3>
-    <input type="text" id="descInput" placeholder="Описание задачи (минимум 3 символа)">
-    <select id="statusInput">
-        <option value="NEW">NEW</option>
-        <option value="IN_PROGRESS">IN_PROGRESS</option>
-        <option value="DONE">DONE</option>
-    </select>
-    <button onclick="createTask()">Создать</button>
+<!-- Фильтры -->
+<div class="controls">
+    <input type="text" id="searchInput" placeholder="Поиск...">
+    <label>
+        <input type="checkbox" id="overdueFilter" onchange="loadTasks()">
+        Только просроченные
+    </label>
+    <button class="btn-primary" onclick="loadTasks()">Найти</button>
+    <button class="btn-secondary" onclick="clearFilters()">Очистить</button>
 </div>
 
-<!-- Список задач -->
-<h3>Список задач</h3>
-<div id="tasksList">Загрузка...</div>
+<!-- Создание -->
+<div class="create-box">
+    <span style="font-weight:600">➕ Создать задачу</span>
+    <input type="text" id="newTaskDesc" placeholder="Описание...">
+    <input type="datetime-local" id="newTaskDeadline">
+    <button class="btn-create" onclick="createTask()">Создать</button>
+</div>
+
+<!-- Доска -->
+<div class="board">
+    <div class="column col-NEW" id="col-NEW" ondrop="drop(event, 'NEW')" ondragover="allowDrop(event)">
+        <div class="col-header">📝 NEW</div>
+        <div id="list-NEW"></div>
+    </div>
+    <div class="column col-IN_PROGRESS" id="col-IN_PROGRESS" ondrop="drop(event, 'IN_PROGRESS')" ondragover="allowDrop(event)">
+        <div class="col-header">🏃 IN PROGRESS</div>
+        <div id="list-IN_PROGRESS"></div>
+    </div>
+    <div class="column col-DONE" id="col-DONE" ondrop="drop(event, 'DONE')" ondragover="allowDrop(event)">
+        <div class="col-header">✅ DONE</div>
+        <div id="list-DONE"></div>
+    </div>
+</div>
 
 <script>
-    const API_URL = '/api/tasks'; // Твой базовый путь (или полный URL, если фронтенд отдельно)
+    const API_URL = '/api/tasks';
+    let draggedId = null;
+    let prevCol = null;
 
-    // 1. Получить все задачи
-    async function getTasks() {
-        try {
-            const response = await fetch(API_URL);
-            if (!response.ok) throw new Error('Ошибка сети');
-            const tasks = await response.json();
-            renderTasks(tasks);
-        } catch (error) {
-            console.error(error);
-            document.getElementById('tasksList').innerHTML = '<p style="color:red">Ошибка загрузки задач. Проверьте консоль.</p>';
-        }
-    }
+    async function loadTasks() {
+        const url = new URL(API_URL, window.location.origin);
+        url.searchParams.set('size', '100');
+        url.searchParams.set('description', document.getElementById('searchInput').value);
 
-    function renderTasks(data) {
-    const container = document.getElementById('tasksList');
-
-    // ⚠️ ВАЖНО: Если бэкенд возвращает Page, задачи лежат в data.content
-    // Если бэкенд вернет просто List, то data и есть список.
-    const tasks = Array.isArray(data) ? data : (data.content || []);
-
-    if (!tasks || tasks.length === 0) {
-        container.innerHTML = '<p>Задач нет.</p>';
-        return;
-    }
-
-    container.innerHTML = tasks.map(task => `
-        <div class="task-card">
-            <strong>ID: ${task.id}</strong> | Статус: <span class="status-${task.status.toLowerCase()}">${task.status}</span><br>
-            Описание: ${task.description}<br>
-            Создано: ${new Date(task.created).toLocaleString()}<br>
-            Изменено: ${task.modified ? new Date(task.modified).toLocaleString() : 'Не менялось'}
-
-            <br><br>
-            <button onclick="toggleStatus(${task.id}, '${task.status}')">Сменить статус</button>
-            <button style="background: #ffcccc;" onclick="deleteTask(${task.id})">Удалить</button>
-        </div>
-    `).join('');
-    }
-
-
-    // 3. Создать задачу
-    async function createTask() {
-        const desc = document.getElementById('descInput').value.trim();
-        const status = document.getElementById('statusInput').value;
-
-        if (desc.length < 3) {
-            alert('Описание должно быть длиннее 3 символов!');
-            return;
-        }
-
-        const body = { description: desc, status: status };
+        const overdue = document.getElementById('overdueFilter');
+        if (overdue.checked) url.searchParams.set('overdue', 'true');
 
         try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Ошибка');
+            renderTasks((await res.json()).content || []);
+        } catch (e) { console.error(e); alert('Ошибка загрузки'); }
+    }
+
+    function renderTasks(tasks) {
+        ['NEW', 'IN_PROGRESS', 'DONE'].forEach(s => document.getElementById(`list-${s}`).innerHTML = '');
+
+        tasks.forEach(t => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.id = `task-${t.id}`;
+            card.draggable = true;
+
+            const d = t.deadline ? new Date(t.deadline) : null;
+            const dlStr = d ? d.toLocaleString() : 'Нет';
+            const isOverdue = d && d < new Date();
+
+            // Блок деталей
+            const details = `
+                <div class="details">
+                    <div class="row"><span class="label">Создано:</span><span class="value">${t.created ? new Date(t.created).toLocaleString() : '-'}</span></div>
+                    <div class="row"><span class="label">Изменено:</span><span class="value">${t.modified ? new Date(t.modified).toLocaleString() : '-'}</span></div>
+                    <div class="row"><span class="label">Дедлайн:</span><span class="value ${isOverdue ? 'overdue' : ''}">${dlStr}</span></div>
+                </div>
+            `;
+
+            card.innerHTML = `
+                <div class="card-top">
+                    <span class="badge ${t.status}">${t.status}</span>
+                    <strong>#${t.id}</strong>
+                </div>
+                <p style="margin:0; line-height:1.4;">${t.description}</p>
+                <div class="deadline ${isOverdue ? 'overdue' : ''}">Дедлайн: ${dlStr}</div>
+
+                <button class="delete-btn" onclick="deleteTask(${t.id}); event.stopPropagation()">✕</button>
+                ${details}
+            `;
+
+            // Логика клика (раскрытие)
+            card.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') return; // Игнорируем клик по кнопке удаления
+
+                // Закрываем все остальные
+                document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+                // Открываем текущую, если она не была активна
+                if (!card.classList.contains('active')) {
+                    card.classList.add('active');
+                }
             });
-            // После создания обновляем список
-            getTasks();
-            document.getElementById('descInput').value = '';
-        } catch (e) {
-            alert('Ошибка создания: ' + e.message);
-        }
+
+            // Drag & Drop
+            card.addEventListener('dragstart', e => {
+                draggedId = t.id;
+                prevCol = e.target.closest('.column').id.replace('col-', '');
+                card.classList.add('dragging');
+            });
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                draggedId = null;
+                document.querySelectorAll('.column').forEach(c => c.classList.remove('over-target'));
+            });
+
+            document.getElementById(`list-${t.status}`).appendChild(card);
+        });
     }
 
-    // 4. Удалить задачу
-    async function deleteTask(id) {
-        if(!confirm('Удалить задачу #' + id + '?')) return;
+    function allowDrop(e) { e.preventDefault(); e.target.closest('.column')?.classList.add('over-target'); }
 
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            getTasks();
-        } catch (e) {
-            alert('Ошибка удаления: ' + e.message);
-        }
-    }
+   async function drop(e, newStatus) {
+    e.preventDefault();
+    const card = document.getElementById(`task-${draggedId}`);
+    const targetList = document.getElementById(`list-${newStatus}`);
 
-  async function toggleStatus(id, currentStatus) {
-    let nextStatus = 'NEW';
-    if (currentStatus === 'NEW') nextStatus = 'IN_PROGRESS';
-    if (currentStatus === 'IN_PROGRESS') nextStatus = 'DONE';
-    if (currentStatus === 'DONE') nextStatus = 'NEW';
+    // Визуальное перемещение (оптимистичный UI)
+    targetList.appendChild(card);
+    const badge = card.querySelector('.badge');
+    badge.className = `badge ${newStatus}`;
+    badge.innerText = newStatus;
+    card.classList.remove('dragging');
+    document.querySelectorAll('.column').forEach(c => c.classList.remove('over-target'));
 
     try {
-        await fetch(`${API_URL}/${id}/status`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            // ✅ ПРАВИЛЬНО: JSON.stringify превратит "NEW" в "\"NEW\"", что является валидным JSON-строкой
-            body: nextStatus
+        // ИЗМЕНЕНИЕ ЗДЕСЬ:
+        // Вместо POST/PATCH с JSON телом, делаем запрос с параметром в URL
+        const response = await fetch(`${API_URL}/${draggedId}/status?status=${newStatus}`, {
+            method: 'PATCH'
+            // Тело запроса не нужно, статус в URL
         });
-        getTasks();
-    } catch (e) {
-        console.error(e);
-        alert('Не удалось обновить статус: ' + e.message);
+
+        if (!response.ok) {
+            throw new Error('Ошибка сохранения статуса');
+        }
+
+        // Если успех - ничего не делаем, данные уже на месте
+        console.log('Статус успешно обновлен на сервере');
+
+    } catch (err) {
+        console.error(err);
+        alert('Ошибка сохранения! Задача вернулась назад.');
+        // Откат изменений на клиенте
+        const oldList = document.getElementById(`list-${prevCol}`);
+        oldList.prepend(card);
+        badge.className = `badge ${prevCol}`;
+        badge.innerText = prevCol;
+    } finally {
+        draggedId = null;
     }
-}
+    }
 
+    function clearFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('overdueFilter').checked = false;
+        loadTasks();
+    }
 
-    // Запуск при загрузке страницы
-    getTasks();
+    async function createTask() {
+        const desc = document.getElementById('newTaskDesc').value.trim();
+        const deadline = document.getElementById('newTaskDeadline').value || null;
+        if (!desc) return alert('Введите описание');
+
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ description: desc, deadline, author: 'Admin', status: 'NEW' })
+            });
+            if (res.ok) {
+                document.getElementById('newTaskDesc').value = '';
+                document.getElementById('newTaskDeadline').value = '';
+                loadTasks();
+            } else {
+                alert('Ошибка создания');
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function deleteTask(id) {
+        if(!confirm('Удалить задачу?')) return;
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        loadTasks();
+    }
+
+    loadTasks();
 </script>
 </body>
 </html>

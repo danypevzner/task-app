@@ -87,4 +87,5 @@ public class TaskServiceIntegrationTest {
         Assertions.assertThrows(NoSuchElementException.class,()->taskService.read(created.getId()));
 
     }
+
 }

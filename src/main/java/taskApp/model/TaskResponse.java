@@ -11,4 +11,5 @@ public class TaskResponse {
     private TaskStatus status;
     private LocalDateTime created;
     private LocalDateTime modified;
+    private LocalDateTime deadline;
 }

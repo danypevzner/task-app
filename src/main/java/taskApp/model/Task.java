@@ -24,4 +24,6 @@ public class Task {
     @CreationTimestamp
     private LocalDateTime created;
     private LocalDateTime modified;
+    @Column(name = "deadline_date")
+    private LocalDateTime deadline;
 }

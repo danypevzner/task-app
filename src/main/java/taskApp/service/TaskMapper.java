@@ -11,9 +11,7 @@ import java.util.List;
 @Mapper
 public interface TaskMapper {
     TaskMapper INSTANCE = Mappers.getMapper(TaskMapper.class);
-
     TaskResponse toResponse(Task task);
     Task toTask(TaskRequest request);
     List<TaskResponse> toResponseList(List<Task> tasks);
-
 }
