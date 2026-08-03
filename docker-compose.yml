@@ -1,0 +1,47 @@
+
+services:
+  app:
+    build: .
+    container_name: kanban-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/kanban_db
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+
+      SPRING_PROFILES_ACTIVE: docker
+
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - kanban-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: kanban-db
+    environment:
+      POSTGRES_DB: kanban_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d kanban_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kanban-network
+    restart: unless-stopped
+
+networks:
+  kanban-network:
+    driver: bridge
+
+volumes:
+  pgdata:

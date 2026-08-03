@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import taskApp.TaskApplication;
+import taskApp.exception.TaskNotFoundException;
 import taskApp.model.TaskRequest;
 import taskApp.model.TaskResponse;
 import taskApp.model.TaskStatus;
@@ -82,9 +83,9 @@ public class TaskServiceIntegrationTest {
 
         taskService.delete(created.getId());
 
-        Assertions.assertThrows(NoSuchElementException.class,() -> taskService.delete(created.getId()));
+        Assertions.assertThrows(TaskNotFoundException.class,() -> taskService.delete(created.getId()));
 
-        Assertions.assertThrows(NoSuchElementException.class,()->taskService.read(created.getId()));
+        Assertions.assertThrows(TaskNotFoundException.class,()->taskService.read(created.getId()));
 
     }
 
